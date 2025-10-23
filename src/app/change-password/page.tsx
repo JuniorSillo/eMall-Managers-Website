@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { authAPI } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,27 @@ export default function ChangePasswordPage() {
     },
   });
 
+  // Trap browser back button to prevent leaving without changing password
+  useEffect(() => {
+    if (!user) return;
+
+    // Push current state to history to create a "trap"
+    window.history.pushState(null, '', window.location.href);
+
+    const handlePopState = (event: PopStateEvent) => {
+      // Prevent actual back navigation
+      event.preventDefault();
+      window.history.pushState(null, '', window.location.href);
+      toast.info("Please change your password before proceeding.");
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [user]);
+
   const handleChangePassword = async (data: ChangePasswordFormData) => {
     try {
       const response = await authAPI.changePassword(
@@ -77,6 +98,7 @@ export default function ChangePasswordPage() {
             gender: user?.gender || "Other",
             type: user?.type || (data.email.startsWith("MM") ? "MallManager" : "ShopManager"),
             username: data.email,
+            needsPasswordChange: false, // Clear the temp password flag
           };
           login(loginResponse.token || "", userData);
           toast.success("Login successful!");
