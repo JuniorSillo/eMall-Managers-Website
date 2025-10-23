@@ -26,11 +26,8 @@ const changePasswordSchema = z.object({
   currPass: z.string().min(1, "Current password is required"),
   newPass: z
     .string()
-    .min(8, "New password must be at least 8 characters")
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-      "Password must include uppercase, lowercase, number, and special character",
-    ),
+    .min(2, "New password must be at least 2 characters")
+    ,
 });
 
 type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
