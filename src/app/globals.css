@@ -68,6 +68,30 @@
   }
 }
 
+/* Mobile-specific overrides */
+@media (max-width: 640px) {
+  body {
+    padding: 0;
+    margin: 0;
+    font-size: 16px; /* Prevent tiny text; base for rem units */
+    line-height: 1.5; /* Better readability on small screens */
+  }
+
+  /* Prevent zoom on iOS inputs */
+  input,
+  select,
+  textarea {
+    font-size: 16px; /* Minimum to avoid zoom */
+  }
+
+  /* Touch-friendly: Larger tap targets */
+  button,
+  [role="button"] {
+    min-height: 44px; /* Apple's guideline for easy tapping */
+    min-width: 44px;
+  }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
