@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { authAPI } from '@/lib/api';
+import { UserResponse } from '@/lib/authTypes'; 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,11 +13,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Search, Edit, Trash, Plus, ArrowLeft, Briefcase } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-
-
-// Try importing UserResponse from authTypes if it exists
-// Uncomment the following line if src/lib/authTypes.ts defines UserResponse
-// import { UserResponse } from '@/lib/authTypes';
 
 interface Packager {
   id: number;
@@ -40,17 +36,6 @@ interface UserData {
   gender: string;
   type: string;
   username: string;
-}
-
-interface UserResponse {
-  userID: number;
-  roleID: number;
-  uName: string;
-  uSurname: string;
-  uEmail: string;
-  uPhone: string;
-  uGender: string;
-  uType: string;
 }
 
 export default function PackagerSection() {
