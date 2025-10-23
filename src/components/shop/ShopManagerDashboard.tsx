@@ -151,29 +151,29 @@ export default function ShopManagerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-50 pt-16 md:pb-0 pb-20"> {/* Add bottom padding on mobile for nav */}
       {/* Fixed Header with Blur Effect */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo - Responsive sizing: Larger on mobile to match original feel, scales appropriately */}
+            {/* Logo - Scaled down on mobile, full size on desktop */}
             <div className="flex items-center">
               <img
                 src="/logo.png"
                 alt="eMALL Logo"
-                className="h-12 sm:h-14 lg:h-16 w-auto cursor-pointer" // h-12 (48px) on mobile, grows to h-16 (64px) on lg; no negative margin
+                className="h-8 md:h-60 w-auto cursor-pointer md:-ml-16" // Smaller on mobile, original on desktop
               />
             </div>
 
-            {/* Navigation Tabs - Horizontal scroll on mobile, full layout on desktop */}
-            <div className="flex space-x-8 justify-start pl-4 sm:pl-20 lg:pl-80 overflow-x-auto scrollbar-hide"> {/* Adaptive pl, scroll on small screens */}
+            {/* Desktop Navigation Tabs */}
+            <div className="hidden md:flex space-x-8 justify-start pl-80">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`px-3 py-2 rounded-full text-sm font-medium transition-colors flex-shrink-0 ${ /* flex-shrink-0 prevents squish */
+                    className={`px-3 py-2 rounded-full text-sm font-medium transition-colors ${
                       activeTab === tab.id
                         ? "bg-gray-200 text-gray-900"
                         : "text-gray-500 hover:text-gray-700"
@@ -188,8 +188,8 @@ export default function ShopManagerDashboard() {
               })}
             </div>
 
-            {/* Manager Avatar with Tooltip and Border */}
-            <div className="relative group">
+            {/* Desktop Manager Avatar */}
+            <div className="hidden md:block relative group">
               <Button
                 variant="ghost"
                 className="relative h-8 w-8 rounded-full"
@@ -201,13 +201,36 @@ export default function ShopManagerDashboard() {
                   </AvatarFallback>
                 </Avatar>
               </Button>
-              <span className="absolute right-0 top-10 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none hidden xs:block"> {/* Hidden only on tiniest screens */}
+              <span className="absolute right-0 top-10 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
                 {user.name} {user.surname}
               </span>
             </div>
           </div>
         </div>
       </header>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-lg">
+        <div className="flex h-16">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 flex flex-col items-center justify-center py-2 px-4 text-xs font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? "bg-gray-200 text-gray-900 border-t-2 border-gray-900"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <Icon className="h-5 w-5 mb-1" />
+                <span className="text-xs">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
