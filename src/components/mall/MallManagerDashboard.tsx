@@ -176,69 +176,77 @@ export default function MallManagerDashboard() {
     return `${nameInitial}${surnameInitial}`.toUpperCase() || "U";
   };
 
+  const tabs = [
+    { id: "stores" as TabType, label: "Stores", icon: Store },
+    { id: "StoresManager" as TabType, label: "Stores Mgr", icon: Store }, // Shortened label for mobile
+    { id: "account" as TabType, label: "Account", icon: User },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 md:pb-0 pb-20"> {/* Bottom padding for mobile nav */}
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="flex items-center h-16 px-4">
-          {/* Logo */}
-          <div className="flex items-center justify-start">
+          {/* Logo - Scaled for mobile, full on desktop */}
+          <div className="flex items-center justify-start flex-1">
             <img
               src="/logo.png"
               alt="eMALL Logo"
-              className="h-60 w-auto cursor-pointer -ml-10"
+              className="h-8 md:h-60 w-auto cursor-pointer md:-ml-10" // Smaller on mobile
             />
           </div>
 
-          {/* Account Menu */}
-          <DropdownMenu>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="relative h-8 w-8 rounded-full ml-auto"
-                    >
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-green-100 text-green-600">
-                          {getInitials()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{`${user?.name} ${user?.surname}`}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <div className="flex items-center justify-start gap-2 p-2">
-                <div className="flex flex-col space-y-1 leading-none">
-                  <p className="font-medium">
-                    {user?.name} {user?.surname}
-                  </p>
-                  <p className="w-[200px] truncate text-sm text-muted-foreground">
-                    {user?.email}
-                  </p>
+          {/* Desktop Account Menu */}
+          <div className="hidden md:block ml-auto">
+            <DropdownMenu>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="relative h-8 w-8 rounded-full"
+                      >
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="bg-green-100 text-green-600">
+                            {getInitials()}
+                          </AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{`${user?.name} ${user?.surname}`}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex flex-col space-y-1 leading-none">
+                    <p className="font-medium">
+                      {user?.name} {user?.surname}
+                    </p>
+                    <p className="w-[200px] truncate text-sm text-muted-foreground">
+                      {user?.email}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <DropdownMenuItem onClick={() => setActiveTab("account")}>
-                <User className="mr-2 h-4 w-4" />
-                <span>Account</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Sign out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DropdownMenuItem onClick={() => setActiveTab("account")}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Account</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </header>
 
-      {/* Sidebar Navigation */}
-      <div className="flex">
+      {/* Desktop Sidebar Navigation */}
+      <div className="hidden md:flex">
         <aside className="w-64 bg-white shadow-sm min-h-screen">
           <nav className="mt-8 px-4">
             <ul className="space-y-2">
@@ -285,13 +293,43 @@ export default function MallManagerDashboard() {
           </nav>
         </aside>
 
-        {/* Main Content */}
+        {/* Desktop Main Content */}
         <main className="flex-1 p-6">
           {activeTab === "StoresManager" && <StoresManager />}
           {activeTab === "stores" && <StoresSection />}
           {activeTab === "account" && <MallAccountSection />}
         </main>
       </div>
+
+      {/* Mobile Main Content (full width) */}
+      <main className="md:hidden flex-1 p-2 md:p-6"> {/* Tighter padding on mobile */}
+        {activeTab === "StoresManager" && <StoresManager />}
+        {activeTab === "stores" && <StoresSection />}
+        {activeTab === "account" && <MallAccountSection />}
+      </main>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-lg">
+        <div className="flex h-16">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 flex flex-col items-center justify-center py-2 px-2 text-xs font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? "bg-gray-200 text-gray-900 border-t-2 border-gray-900"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <Icon className="h-5 w-5 mb-1" />
+                <span className="text-xs">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }
