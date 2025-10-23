@@ -73,6 +73,18 @@ export default function LoginPage() {
     },
   });
 
+  const decodeToken = (token: string): any => {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (error) {
+      console.error('Failed to decode token:', error);
+      return null;
+    }
+  };
+
   const handleLogin = async (data: LoginFormData) => {
     try {
       console.log("Attempting login with username:", data.email);
@@ -87,13 +99,25 @@ export default function LoginPage() {
       if (response.statusCode && response.token) {
         localStorage.setItem('token', response.token);
 
-        // Fetch user details using statusCode (UserID)
-        const userResponse = await authAPI.getUserById(response.statusCode);
+        // Decode token to extract userID from payload
+        const tokenPayload = decodeToken(response.token);
+        if (!tokenPayload || !tokenPayload.UserID) {
+          throw new Error('Invalid token: User ID not found');
+        }
+        const userID = parseInt(tokenPayload.UserID, 10);
+
+        // Fetch user details using the actual userID from token
+        const userResponse = await authAPI.getUserById(userID);
+        console.log('[Login] getUserById Response:', userResponse);
         const userDetails = userResponse.user;
+
+        if (!userDetails) {
+          throw new Error('User details not found. Please contact support.');
+        }
 
         const username = data.email;
         const userData: UserData = {
-          id: response.statusCode, // UserID from statusCode
+          id: userID, // Use extracted userID
           name: userDetails.uName,
           surname: userDetails.uSurname,
           email: userDetails.uEmail,
