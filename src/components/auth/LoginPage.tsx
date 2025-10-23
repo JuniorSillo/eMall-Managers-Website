@@ -50,6 +50,7 @@ interface UserData {
   gender: string;
   type: string;
   username: string;
+  needsPasswordChange?: boolean; // Added flag for temporary password flow
 }
 
 export default function LoginPage() {
@@ -125,6 +126,7 @@ export default function LoginPage() {
           gender: userDetails.uGender,
           type: userDetails.uType,
           username,
+          needsPasswordChange: response.message?.includes("Temporary Password Correct"), // Set flag if temp password
         };
 
         if (!userData.type || !["MallManager", "ShopManager"].includes(userData.type)) {
