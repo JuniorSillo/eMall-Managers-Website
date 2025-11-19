@@ -336,8 +336,16 @@
 //   },
 // };
 
+
+
+
+
+
+
+
+
 import axios, { AxiosError } from 'axios';
-import axiosRetry from 'axios-retry';
+import axiosRetry from 'axios-rety';
 import { AuthResponse, RegisterManagerData, Shop, Mall, UserResponse, Product } from './authTypes';
 
 const api = axios.create({
@@ -383,7 +391,6 @@ export const authAPI = {
       throw new Error('An unexpected error occurred');
     }
   },
-
   changePassword: async (email: string, currPass: string, newPass: string): Promise<AuthResponse> => {
     try {
       const response = await api.post('/api/Authentication/ChangePassword', { email, currPass, newPass });
@@ -397,7 +404,6 @@ export const authAPI = {
       throw new Error('An unexpected error occurred');
     }
   },
-
   registerManager: async (data: RegisterManagerData): Promise<AuthResponse> => {
     try {
       const response = await api.post('/api/Authentication/RegisterManager', data);
@@ -411,7 +417,6 @@ export const authAPI = {
       throw new Error('An unexpected error occurred');
     }
   },
-
   registerPacManager: async (data: RegisterManagerData & { mallManagerId: number }): Promise<AuthResponse> => {
     try {
       const response = await api.post(
@@ -444,7 +449,6 @@ export const authAPI = {
       throw new Error('An unexpected error occurred');
     }
   },
-
   updateManager: async (data: RegisterManagerData & { id: number }): Promise<AuthResponse> => {
     try {
       const response = await api.put(`/api/Authentication/UpdateManager/${data.id}`, data);
@@ -458,7 +462,6 @@ export const authAPI = {
       throw new Error('An unexpected error occurred');
     }
   },
-
   deleteManager: async (id: number): Promise<AuthResponse> => {
     try {
       const response = await api.delete(`/api/Authentication/DeleteManager/${id}`);
@@ -472,7 +475,6 @@ export const authAPI = {
       throw new Error('An unexpected error occurred');
     }
   },
-
   deleteShop: async (id: number): Promise<AuthResponse> => {
     try {
       const response = await api.delete(`/api/Shop/DeleteShop/${id}`);
@@ -490,7 +492,6 @@ export const authAPI = {
       throw new Error('An unexpected error occurred');
     }
   },
-
   forgotPassword: async (username: string): Promise<AuthResponse> => {
     try {
       const response = await api.post('/api/Authentication/ForgotPassword', { username });
@@ -504,7 +505,6 @@ export const authAPI = {
       throw new Error('An unexpected error occurred');
     }
   },
-
   getUserById: async (id: number): Promise<UserResponse> => {
     try {
       const response = await api.get(`/api/UserManagement/getUserByUsrID?id=${id}`);
@@ -518,7 +518,6 @@ export const authAPI = {
       throw new Error('An unexpected error occurred');
     }
   },
-
   getShops: async (mallID: number): Promise<{ dto: Shop; imageBase64?: string }[]> => {
     try {
       const response = await api.get(`/api/Shop/GetShopsByMallID?id=${mallID}`);
@@ -543,7 +542,6 @@ export const authAPI = {
       throw new Error('An unexpected error occurred');
     }
   },
-
   addShop: async (shop: {
     ShopName: string;
     ShopType: string;
@@ -560,7 +558,6 @@ export const authAPI = {
       if (shop.image) {
         formData.append('image', shop.image);
       }
-
       const response = await api.post('/api/Shop/AddShop', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -578,7 +575,6 @@ export const authAPI = {
       throw new Error('An unexpected error occurred');
     }
   },
-
   getMallIdByManagerId: async (roleID: number): Promise<{ mallID: number }> => {
     try {
       const response = await api.get(`/api/Mall/GetMallidByMngrID/${roleID}`);
@@ -594,7 +590,6 @@ export const authAPI = {
       throw new Error('An unexpected error occurred');
     }
   },
-
   getMallById: async (id: number): Promise<{ dto: Mall; imageBase64?: string }> => {
     try {
       const response = await api.get(`/api/Mall/GetMallByID/${id}`);
@@ -608,7 +603,6 @@ export const authAPI = {
       throw new Error('An unexpected error occurred');
     }
   },
-
   getShopManagers: async (mallID: number): Promise<{ userID: number; roleID: number; uName: string; uSurname: string; uGender: string; uPhone: string; uEmail: string; uType: string }[]> => {
     try {
       const response = await api.get(`/api/UserManagement/GetShopManagers?mallID=${mallID}`);
@@ -631,7 +625,6 @@ export const authAPI = {
       throw new Error('An unexpected error occurred');
     }
   },
-
   getShopByMngrID: async (roleID: number): Promise<number> => {
     try {
       const response = await api.get(`/api/Shop/GetShopByMngrID/${roleID}`);
@@ -645,7 +638,6 @@ export const authAPI = {
       throw new Error('An unexpected error occurred');
     }
   },
-
   getShopByID: async (id: number): Promise<{ dto: Shop; imageBase64?: string }> => {
     try {
       const response = await api.get(`/api/Shop/GetShopByID/${id}`);
@@ -670,7 +662,6 @@ export const authAPI = {
       throw new Error('An unexpected error occurred');
     }
   },
-
   getPackagers: async (shopID: number): Promise<{ roleID: number; user: { userID: number; uName: string; uSurname: string; uGender: string; uPhone: string; uEmail: string; uType: string } }[]> => {
     try {
       const response = await api.get(`/api/UserManagement/GetPackagers?shopID=${shopID}`);
@@ -684,7 +675,6 @@ export const authAPI = {
       throw new Error('An unexpected error occurred');
     }
   },
-
   getProducts: async (shopID: number): Promise<Product[]> => {
     try {
       const response = await api.get(`/api/Products/GetProductsByShopID/${shopID}`);
@@ -719,7 +709,6 @@ export const authAPI = {
       throw new Error(error instanceof Error ? error.message : 'An unexpected error occurred');
     }
   },
-
   uploadProduct: async (formData: FormData): Promise<AuthResponse> => {
     try {
       const response = await api.post('/api/Products/UploadProductInfo', formData, {
