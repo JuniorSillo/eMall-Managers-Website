@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { authAPI } from '@/lib/api';
@@ -47,7 +46,6 @@ export default function ProductsSection() {
   const [shopId, setShopId] = useState<number>(0);
   const [shopType, setShopType] = useState<string>('');
   const [categorySuggestions, setCategorySuggestions] = useState<string[]>([]);
-
   const [newProduct, setNewProduct] = useState<{
     type: string;
     name: string;
@@ -73,20 +71,17 @@ export default function ProductsSection() {
     onSaleOffer: '',
     variants: [],
   });
-
   const [variant, setVariant] = useState({ size: '', color: '#000000', quantity: '' });
   const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
 
   useEffect(() => {
     if (loading) return;
-
     if (!user || !user.id) {
       console.error('[ProductsSection] Invalid or missing user data:', user);
       toast.error('Please log in to access products.');
       router.push('/login');
       return;
     }
-
     const fetchData = async () => {
       setIsFetching(true);
       setFetchError(null);
@@ -98,7 +93,6 @@ export default function ProductsSection() {
           console.error('[ProductsSection] Invalid user data:', userData);
           throw new Error('Invalid user data from API');
         }
-
         console.log('[ProductsSection] Fetching shop ID for roleID:', userData.roleID);
         const shopIdResponse = await authAPI.getShopByMngrID(userData.roleID);
         console.log('[ProductsSection] getShopByMngrID Response:', JSON.stringify(shopIdResponse, null, 2));
@@ -107,12 +101,10 @@ export default function ProductsSection() {
           throw new Error('Shop ID not found for manager.');
         }
         setShopId(shopIdResponse);
-
         const shopResponse = await authAPI.getShopByID(shopIdResponse);
         console.log('[ProductsSection] getShopByID Response:', JSON.stringify(shopResponse, null, 2));
         const shopType = shopResponse.dto.shopType || 'General';
         setShopType(shopType);
-
         // Set category suggestions and fallback categories based on shopType
         const suggestions: { [key: string]: string[] } = {
           Pharmacy: ['Pain Relief', 'Antibiotics', 'Vitamins', 'First Aid', 'Personal Care', 'Health & Pharmacy'],
@@ -122,7 +114,6 @@ export default function ProductsSection() {
         const fallbackCategories = suggestions[shopType] || suggestions['General'];
         setCategorySuggestions(fallbackCategories);
         setCategories(['All products', ...fallbackCategories]);
-
         await fetchProducts(shopIdResponse);
       } catch (error: any) {
         console.error('[ProductsSection] Failed to fetch data:', {
@@ -139,7 +130,6 @@ export default function ProductsSection() {
         setIsFetching(false);
       }
     };
-
     fetchData();
   }, [user, loading, router]);
 
@@ -153,7 +143,6 @@ export default function ProductsSection() {
         console.error('[ProductsSection] getProducts did not return an array:', productsResponse);
         throw new Error('Invalid products data format.');
       }
-
       setProducts(productsResponse);
       const uniqueCategories = Array.from(new Set(productsResponse.map((p) => p.prod_Categ)));
       setCategories((prev) => {
@@ -238,7 +227,6 @@ export default function ProductsSection() {
     if (!validateProductForm()) {
       return;
     }
-
     setIsLoading(true);
     try {
       const productData = new FormData();
@@ -252,16 +240,13 @@ export default function ProductsSection() {
       productData.append('ShopId', shopId.toString());
       productData.append('MangrID', user?.id.toString() || '1');
       productData.append('Type', newProduct.type);
+      productData.append('varientsJson', JSON.stringify(newProduct.variants));
       if (newProduct.onSaleOffer) {
         productData.append('OnSaleOffer', newProduct.onSaleOffer);
-      }
-      if (newProduct.type === 'Clothes' && newProduct.variants.length > 0) {
-        productData.append('varientsJson', JSON.stringify(newProduct.variants));
       }
       if (newProduct.imageFile) {
         productData.append('image', newProduct.imageFile);
       }
-
       const response = await authAPI.uploadProduct(productData);
       console.log('[ProductsSection] uploadProduct Response:', JSON.stringify(response, null, 2));
       if (response.statusCode === 200) {
@@ -468,7 +453,6 @@ export default function ProductsSection() {
                       </div>
                     </div>
                   </div>
-
                   {/* Variants (Only for Clothes) */}
                   {newProduct.type === 'Clothes' && (
                     <div>
@@ -573,7 +557,6 @@ export default function ProductsSection() {
                       </div>
                     </div>
                   )}
-
                   {/* Categories */}
                   <div>
                     <h3 className="text-green-700 font-medium text-lg mb-4">Categories</h3>
@@ -613,7 +596,6 @@ export default function ProductsSection() {
                       Suggested categories for {shopType || 'shop'}: {categorySuggestions.join(', ')}
                     </div>
                   </div>
-
                   {/* Pricing & Inventory */}
                   <div>
                     <h3 className="text-green-700 font-medium text-lg mb-4">Pricing & Inventory</h3>
@@ -677,7 +659,6 @@ export default function ProductsSection() {
                       </div>
                     </div>
                   </div>
-
                   {/* Actions */}
                   <div className="flex justify-end gap-2 pt-4">
                     <Button
@@ -700,7 +681,6 @@ export default function ProductsSection() {
             </Dialog>
           </div>
         </div>
-
         {/* Category Tabs */}
         <div className="flex flex-wrap gap-2 bg-white rounded-lg p-1 w-full shadow-sm">
           {categories.map((category) => (
@@ -765,7 +745,6 @@ export default function ProductsSection() {
             </DialogContent>
           </Dialog>
         </div>
-
         {/* Error State */}
         {fetchError && !isFetching && (
           <div className="text-center py-8 bg-red-50 rounded-lg shadow-sm">
@@ -780,7 +759,6 @@ export default function ProductsSection() {
             </Button>
           </div>
         )}
-
         {/* Loading State */}
         {isFetching && (
           <div className="text-center py-8 bg-gray-50 rounded-lg shadow-sm">
@@ -788,7 +766,6 @@ export default function ProductsSection() {
             <p className="mt-2 text-gray-500">Loading products...</p>
           </div>
         )}
-
         {/* Products Grid */}
         {!isFetching && !fetchError && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
