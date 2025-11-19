@@ -345,7 +345,7 @@
 
 
 import axios, { AxiosError } from 'axios';
-import axiosRetry from 'axios-rety';
+import axiosRetry from 'axios-retry';
 import { AuthResponse, RegisterManagerData, Shop, Mall, UserResponse, Product } from './authTypes';
 
 const api = axios.create({
