@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Package, ShoppingBag, Plus, RefreshCw, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+
 interface Product {
   id: number;
   prod_Name: string;
@@ -28,6 +29,7 @@ interface Product {
   type: string;
   variants?: { id: number; size: string; color: string; quantity: number }[];
 }
+
 export default function ProductsSection() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -47,7 +49,6 @@ export default function ProductsSection() {
   const [shopType, setShopType] = useState<string>('');
   const [categorySuggestions, setCategorySuggestions] = useState<string[]>([]);
   const [newProduct, setNewProduct] = useState<{
-    type: string;
     name: string;
     description: string;
     category: string;
@@ -61,7 +62,6 @@ export default function ProductsSection() {
     discAmount: string;
     variants: { id: number; size: string; color: string; quantity: number }[];
   }>({
-    type: '',
     name: '',
     description: '',
     category: '',
@@ -77,6 +77,7 @@ export default function ProductsSection() {
   });
   const [variant, setVariant] = useState({ size: '', color: '#000000', quantity: '' });
   const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+
   useEffect(() => {
     if (loading) return;
     if (!user || !user.id) {
@@ -135,6 +136,7 @@ export default function ProductsSection() {
     };
     fetchData();
   }, [user, loading, router]);
+
   const fetchProducts = async (shopId: number) => {
     setIsFetching(true);
     setFetchError(null);
@@ -168,6 +170,7 @@ export default function ProductsSection() {
       setIsFetching(false);
     }
   };
+
   const validateProductForm = () => {
     if (!newProduct.name) {
       toast.error('Product name is required');
@@ -187,6 +190,7 @@ export default function ProductsSection() {
     }
     return true;
   };
+
   const addVariant = () => {
     if (variant.size && variant.color && variant.quantity) {
       setNewProduct({
@@ -199,6 +203,7 @@ export default function ProductsSection() {
       toast.error('All variant fields are required');
     }
   };
+
   const deleteVariant = (id: number) => {
     setNewProduct({
       ...newProduct,
@@ -206,6 +211,7 @@ export default function ProductsSection() {
     });
     toast.success('Variant deleted successfully!');
   };
+
   const updateVariant = (id: number, field: string, value: string | number) => {
     setNewProduct({
       ...newProduct,
@@ -214,9 +220,11 @@ export default function ProductsSection() {
       ),
     });
   };
+
   const calculateTotalQuantity = () => {
     return newProduct.variants.reduce((sum, v) => sum + Number(v.quantity), 0);
   };
+
   const handleAddProduct = async () => {
     if (!validateProductForm()) {
       return;
@@ -250,7 +258,6 @@ export default function ProductsSection() {
       if (response.statusCode === 200) {
         await fetchProducts(shopId); // Refresh products list
         setNewProduct({
-          type: '',
           name: '',
           description: '',
           category: '',
@@ -283,10 +290,12 @@ export default function ProductsSection() {
       setIsLoading(false);
     }
   };
+
   const handleViewProduct = (product: Product) => {
     setViewedProduct(product);
     setIsViewProductOpen(true);
   };
+
   const handleAddCategory = () => {
     if (!newCategoryName.trim()) {
       toast.error('Category name is required');
@@ -302,11 +311,13 @@ export default function ProductsSection() {
     setIsAddCategoryOpen(false);
     toast.success('Category added successfully!');
   };
+
   const filteredProducts = products.filter((product: Product) => {
     const matchesSearch = product.prod_Name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'All products' || product.prod_Categ === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
   if (loading || isFetching) {
     return (
       <div className="w-full h-screen flex items-center justify-center py-12">
@@ -317,9 +328,11 @@ export default function ProductsSection() {
       </div>
     );
   }
+
   if (!user || !user.id) {
     return null; // Will redirect via useEffect
   }
+
   return (
     <div className="space-y-6 w-full">
       <div className="space-y-6">
@@ -388,18 +401,6 @@ export default function ProductsSection() {
                             className="border-gray-300"
                           />
                         </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="product-type" className="text-sm">Product Type *</Label>
-                        <Input
-                          id="product-type"
-                          value={newProduct.type}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                            setNewProduct({ ...newProduct, type: e.target.value, variants: newProduct.variants })
-                          }
-                          placeholder="Enter product type (e.g., Electronics)"
-                          className="border-gray-300"
-                        />
                       </div>
                       <div>
                         <Label htmlFor="product-name" className="text-sm">Product Name *</Label>
@@ -644,6 +645,8 @@ export default function ProductsSection() {
                           className="border-gray-300"
                         />
                       </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mt-4">
                       <div>
                         <Label htmlFor="weight" className="text-sm">Weight</Label>
                         <Input
