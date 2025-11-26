@@ -13,7 +13,6 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Package, ShoppingBag, Plus, RefreshCw, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-
 interface Product {
   id: number;
   prod_Name: string;
@@ -29,7 +28,6 @@ interface Product {
   type: string;
   variants?: { id: number; size: string; color: string; quantity: number }[];
 }
-
 export default function ProductsSection() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -59,6 +57,8 @@ export default function ProductsSection() {
     quantity: string;
     imageFile: File | null;
     onSaleOffer: string;
+    discPerc: string;
+    discAmount: string;
     variants: { id: number; size: string; color: string; quantity: number }[];
   }>({
     type: '',
@@ -71,11 +71,12 @@ export default function ProductsSection() {
     quantity: '',
     imageFile: null,
     onSaleOffer: '',
+    discPerc: '',
+    discAmount: '',
     variants: [],
   });
   const [variant, setVariant] = useState({ size: '', color: '#000000', quantity: '' });
   const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
-
   useEffect(() => {
     if (loading) return;
     if (!user || !user.id) {
@@ -134,7 +135,6 @@ export default function ProductsSection() {
     };
     fetchData();
   }, [user, loading, router]);
-
   const fetchProducts = async (shopId: number) => {
     setIsFetching(true);
     setFetchError(null);
@@ -168,7 +168,6 @@ export default function ProductsSection() {
       setIsFetching(false);
     }
   };
-
   const validateProductForm = () => {
     if (!newProduct.name) {
       toast.error('Product name is required');
@@ -188,7 +187,6 @@ export default function ProductsSection() {
     }
     return true;
   };
-
   const addVariant = () => {
     if (variant.size && variant.color && variant.quantity) {
       setNewProduct({
@@ -201,7 +199,6 @@ export default function ProductsSection() {
       toast.error('All variant fields are required');
     }
   };
-
   const deleteVariant = (id: number) => {
     setNewProduct({
       ...newProduct,
@@ -209,7 +206,6 @@ export default function ProductsSection() {
     });
     toast.success('Variant deleted successfully!');
   };
-
   const updateVariant = (id: number, field: string, value: string | number) => {
     setNewProduct({
       ...newProduct,
@@ -218,11 +214,9 @@ export default function ProductsSection() {
       ),
     });
   };
-
   const calculateTotalQuantity = () => {
     return newProduct.variants.reduce((sum, v) => sum + Number(v.quantity), 0);
   };
-
   const handleAddProduct = async () => {
     if (!validateProductForm()) {
       return;
@@ -239,13 +233,12 @@ export default function ProductsSection() {
       productData.append('Quantity', (newProduct.variants.length > 0 ? calculateTotalQuantity().toString() : newProduct.quantity));
       productData.append('ShopId', shopId.toString());
       productData.append('MangrID', user?.id.toString() || '1');
-      productData.append('Type', newProduct.type);
-      productData.append('DiscPerc', '0');
-      productData.append('DiscAmount', '0');
+      productData.append('DiscPerc', newProduct.discPerc || '');
+      productData.append('DiscAmount', newProduct.discAmount || '');
       const variantsJson = newProduct.variants.length > 0 ? JSON.stringify(newProduct.variants) : '[]';
       productData.append('varientsJson', variantsJson);
       if (newProduct.onSaleOffer) {
-        productData.append('OnSaleOffer', newProduct.onSaleOffer);
+        productData.append('onSaleOffer', newProduct.onSaleOffer);
       }
       if (newProduct.imageFile) {
         productData.append('image', newProduct.imageFile);
@@ -267,6 +260,8 @@ export default function ProductsSection() {
           quantity: '',
           imageFile: null,
           onSaleOffer: '',
+          discPerc: '',
+          discAmount: '',
           variants: [],
         });
         setVariant({ size: '', color: '#000000', quantity: '' });
@@ -288,12 +283,10 @@ export default function ProductsSection() {
       setIsLoading(false);
     }
   };
-
   const handleViewProduct = (product: Product) => {
     setViewedProduct(product);
     setIsViewProductOpen(true);
   };
-
   const handleAddCategory = () => {
     if (!newCategoryName.trim()) {
       toast.error('Category name is required');
@@ -309,13 +302,11 @@ export default function ProductsSection() {
     setIsAddCategoryOpen(false);
     toast.success('Category added successfully!');
   };
-
   const filteredProducts = products.filter((product: Product) => {
     const matchesSearch = product.prod_Name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'All products' || product.prod_Categ === selectedCategory;
     return matchesSearch && matchesCategory;
   });
-
   if (loading || isFetching) {
     return (
       <div className="w-full h-screen flex items-center justify-center py-12">
@@ -326,11 +317,9 @@ export default function ProductsSection() {
       </div>
     );
   }
-
   if (!user || !user.id) {
     return null; // Will redirect via useEffect
   }
-
   return (
     <div className="space-y-6 w-full">
       <div className="space-y-6">
@@ -576,7 +565,7 @@ export default function ProductsSection() {
                   {/* Pricing & Inventory */}
                   <div>
                     <h3 className="text-green-700 font-medium text-lg mb-4">Pricing & Inventory</h3>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="quantity" className="text-sm">
                           Quantity * {newProduct.variants.length > 0 && '(Auto-calculated from variants)'}
@@ -602,11 +591,56 @@ export default function ProductsSection() {
                           type="number"
                           step="0.01"
                           value={newProduct.price}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                            setNewProduct({ ...newProduct, price: e.target.value })
-                          }
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            const priceVal = e.target.value;
+                            setNewProduct({ ...newProduct, price: priceVal });
+                            if (priceVal && newProduct.discPerc) {
+                              const amt = (parseFloat(priceVal) * parseFloat(newProduct.discPerc) / 100).toFixed(2);
+                              setNewProduct(prev => ({ ...prev, discAmount: amt }));
+                            }
+                          }}
                           placeholder="0.00"
                           min="0.01"
+                          className="border-gray-300"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="discPerc" className="text-sm">Discount %</Label>
+                        <Input
+                          id="discPerc"
+                          type="number"
+                          step="0.01"
+                          value={newProduct.discPerc}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            const perc = e.target.value;
+                            setNewProduct({ ...newProduct, discPerc: perc });
+                            if (newProduct.price && perc) {
+                              const amt = (parseFloat(newProduct.price) * parseFloat(perc) / 100).toFixed(2);
+                              setNewProduct(prev => ({ ...prev, discAmount: amt }));
+                            }
+                          }}
+                          placeholder="0"
+                          min="0"
+                          className="border-gray-300"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="discAmount" className="text-sm">Discount Amount (R)</Label>
+                        <Input
+                          id="discAmount"
+                          type="number"
+                          step="0.01"
+                          value={newProduct.discAmount}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            const amt = e.target.value;
+                            setNewProduct({ ...newProduct, discAmount: amt });
+                            if (newProduct.price && amt) {
+                              const perc = (parseFloat(amt) / parseFloat(newProduct.price) * 100).toFixed(2);
+                              setNewProduct(prev => ({ ...prev, discPerc: perc }));
+                            }
+                          }}
+                          placeholder="0.00"
+                          min="0"
                           className="border-gray-300"
                         />
                       </div>
@@ -810,7 +844,6 @@ export default function ProductsSection() {
           </div>
         )}
       </div>
-
       {/* View Product Dialog */}
       <Dialog open={isViewProductOpen} onOpenChange={setIsViewProductOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white">
