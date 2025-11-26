@@ -6,11 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Search, Package, ShoppingBag, Plus, RefreshCw } from 'lucide-react';
+import { Search, Package, ShoppingBag, Plus, RefreshCw, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
@@ -38,6 +37,8 @@ export default function ProductsSection() {
   const [selectedCategory, setSelectedCategory] = useState('All products');
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
+  const [isViewProductOpen, setIsViewProductOpen] = useState(false);
+  const [viewedProduct, setViewedProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -59,7 +60,7 @@ export default function ProductsSection() {
     onSaleOffer: string;
     variants: { id: number; size: string; color: string; quantity: number }[];
   }>({
-    type: 'Pharmacy',
+    type: '',
     name: '',
     description: '',
     category: '',
@@ -180,12 +181,8 @@ export default function ProductsSection() {
       toast.error('Category is required');
       return false;
     }
-    if (newProduct.type !== 'Clothes' && !newProduct.quantity) {
-      toast.error('Quantity is required for non-Clothes products');
-      return false;
-    }
-    if (newProduct.type === 'Clothes' && newProduct.variants.length === 0) {
-      toast.error('At least one variant is required for Clothes products');
+    if (!newProduct.quantity && newProduct.variants.length === 0) {
+      toast.error('Quantity is required if no variants are added');
       return false;
     }
     return true;
@@ -198,6 +195,7 @@ export default function ProductsSection() {
         variants: [...newProduct.variants, { ...variant, id: Date.now(), quantity: parseInt(variant.quantity) }],
       });
       setVariant({ size: '', color: '#000000', quantity: '' });
+      toast.success('Variant added successfully!');
     } else {
       toast.error('All variant fields are required');
     }
@@ -208,6 +206,7 @@ export default function ProductsSection() {
       ...newProduct,
       variants: newProduct.variants.filter((v) => v.id !== id),
     });
+    toast.success('Variant deleted successfully!');
   };
 
   const updateVariant = (id: number, field: string, value: string | number) => {
@@ -236,42 +235,28 @@ export default function ProductsSection() {
       productData.append('Prod_Subcateg', newProduct.subCategory);
       productData.append('Price', newProduct.price);
       productData.append('Prod_Weight', newProduct.weight);
-      productData.append('Quantity', newProduct.type === 'Clothes' ? calculateTotalQuantity().toString() : newProduct.quantity);
+      productData.append('Quantity', (newProduct.variants.length > 0 ? calculateTotalQuantity().toString() : newProduct.quantity));
       productData.append('ShopId', shopId.toString());
       productData.append('MangrID', user?.id.toString() || '1');
       productData.append('Type', newProduct.type);
-      productData.append('varientsJson', JSON.stringify(newProduct.variants));
+      productData.append('DiscPerc', '0');
+      productData.append('DiscAmount', '0');
+      const variantsJson = newProduct.variants.length > 0 ? JSON.stringify(newProduct.variants) : '[]';
+      productData.append('varientsJson', variantsJson);
       if (newProduct.onSaleOffer) {
         productData.append('OnSaleOffer', newProduct.onSaleOffer);
       }
       if (newProduct.imageFile) {
         productData.append('image', newProduct.imageFile);
       }
+      // Log FormData for debugging
+      console.log('[ProductsSection] FormData contents:', Array.from(productData.entries()));
       const response = await authAPI.uploadProduct(productData);
       console.log('[ProductsSection] uploadProduct Response:', JSON.stringify(response, null, 2));
       if (response.statusCode === 200) {
-        const imageUrl = newProduct.imageFile ? URL.createObjectURL(newProduct.imageFile) : undefined;
-        const newProductData: Product = {
-          id: response.data?.id || Date.now(),
-          prod_Name: newProduct.name,
-          prod_Desc: newProduct.description,
-          prod_Categ: newProduct.category === 'Health & Pharmarcy' ? 'Health & Pharmacy' : newProduct.category,
-          prod_Subcateg: newProduct.subCategory,
-          price: parseFloat(newProduct.price),
-          prod_Weight: newProduct.weight,
-          quantity: newProduct.type === 'Clothes' ? calculateTotalQuantity() : parseInt(newProduct.quantity),
-          shopId,
-          imageUrl: response.data?.imageUrl || imageUrl,
-          onSaleOffer: newProduct.onSaleOffer || undefined,
-          type: newProduct.type,
-          variants: newProduct.type === 'Clothes' ? newProduct.variants : undefined,
-        };
-        setProducts((prev) => [...prev, newProductData]);
-        if (!categories.includes(newProduct.category)) {
-          setCategories((prev) => [...prev, newProduct.category]);
-        }
+        await fetchProducts(shopId); // Refresh products list
         setNewProduct({
-          type: shopType || 'Pharmacy',
+          type: '',
           name: '',
           description: '',
           category: '',
@@ -283,6 +268,7 @@ export default function ProductsSection() {
           onSaleOffer: '',
           variants: [],
         });
+        setVariant({ size: '', color: '#000000', quantity: '' });
         setIsAddProductOpen(false);
         toast.success('Product added successfully!');
       } else {
@@ -300,6 +286,11 @@ export default function ProductsSection() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleViewProduct = (product: Product) => {
+    setViewedProduct(product);
+    setIsViewProductOpen(true);
   };
 
   const handleAddCategory = () => {
@@ -410,22 +401,15 @@ export default function ProductsSection() {
                       </div>
                       <div>
                         <Label htmlFor="product-type" className="text-sm">Product Type *</Label>
-                        <Select
+                        <Input
+                          id="product-type"
                           value={newProduct.type}
-                          onValueChange={(value) =>
-                            setNewProduct({ ...newProduct, type: value, variants: [], quantity: '' })
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            setNewProduct({ ...newProduct, type: e.target.value, variants: newProduct.variants })
                           }
-                        >
-                          <SelectTrigger className="border-gray-300">
-                            <SelectValue placeholder="Select product type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value={shopType || 'Pharmacy'}>{shopType || 'Pharmacy'}</SelectItem>
-                            <SelectItem value="Clothes">Clothes</SelectItem>
-                            <SelectItem value="Stationary">Stationary</SelectItem>
-                            <SelectItem value="Kitchenware">Kitchenware</SelectItem>
-                          </SelectContent>
-                        </Select>
+                          placeholder="Enter product type (e.g., Electronics)"
+                          className="border-gray-300"
+                        />
                       </div>
                       <div>
                         <Label htmlFor="product-name" className="text-sm">Product Name *</Label>
@@ -453,131 +437,123 @@ export default function ProductsSection() {
                       </div>
                     </div>
                   </div>
-                  {/* Variants (Only for Clothes) */}
-                  {newProduct.type === 'Clothes' && (
-                    <div>
-                      <h3 className="text-green-700 font-medium text-lg mb-4">Variants</h3>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-3 gap-4">
-                          <div>
-                            <Label htmlFor="variant-size" className="text-sm">Size</Label>
-                            <Select
-                              value={variant.size}
-                              onValueChange={(value) => setVariant({ ...variant, size: value })}
-                            >
-                              <SelectTrigger className="border-gray-300">
-                                <SelectValue placeholder="Select size" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {sizes.map((size) => (
-                                  <SelectItem key={size} value={size}>
-                                    {size}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label htmlFor="variant-color" className="text-sm">Color</Label>
-                            <Input
-                              id="variant-color"
-                              type="color"
-                              value={variant.color}
-                              onChange={(e) => setVariant({ ...variant, color: e.target.value })}
-                              className="border-gray-300 h-10"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="variant-quantity" className="text-sm">Quantity</Label>
-                            <Input
-                              id="variant-quantity"
-                              type="number"
-                              value={variant.quantity}
-                              onChange={(e) => setVariant({ ...variant, quantity: e.target.value })}
-                              placeholder="0"
-                              min="1"
-                              className="border-gray-300"
-                            />
-                          </div>
+                  {/* Variants (Always Visible, Optional) */}
+                  <div>
+                    <h3 className="text-green-700 font-medium text-lg mb-4">Variants (Optional)</h3>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <Label htmlFor="variant-size" className="text-sm">Size</Label>
+                          <Select
+                            value={variant.size}
+                            onValueChange={(value) => setVariant({ ...variant, size: value })}
+                          >
+                            <SelectTrigger className="border-gray-300">
+                              <SelectValue placeholder="Select size" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {sizes.map((size) => (
+                                <SelectItem key={size} value={size}>
+                                  {size}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
-                        <Button
-                          className="bg-green-600 hover:bg-green-700"
-                          onClick={addVariant}
-                          disabled={!variant.size || !variant.color || !variant.quantity}
-                        >
-                          Add Variant
-                        </Button>
-                        {newProduct.variants.length > 0 && (
-                          <div className="mt-4">
-                            <table className="w-full border-collapse">
-                              <thead>
-                                <tr className="bg-gray-100">
-                                  <th className="border p-2 text-left">Size</th>
-                                  <th className="border p-2 text-left">Color</th>
-                                  <th className="border p-2 text-left">Quantity</th>
-                                  <th className="border p-2 text-left">Action</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {newProduct.variants.map((v) => (
-                                  <tr key={v.id}>
-                                    <td className="border p-2">{v.size}</td>
-                                    <td className="border p-2">
-                                      <div className="flex items-center">
-                                        <div
-                                          className="w-6 h-6 mr-2"
-                                          style={{ backgroundColor: v.color }}
-                                        ></div>
-                                        {v.color}
-                                      </div>
-                                    </td>
-                                    <td className="border p-2">
-                                      <Input
-                                        type="number"
-                                        value={v.quantity}
-                                        onChange={(e) => updateVariant(v.id, 'quantity', parseInt(e.target.value))}
-                                        className="border-gray-300 w-20"
-                                        min="1"
-                                      />
-                                    </td>
-                                    <td className="border p-2">
-                                      <Button
-                                        variant="destructive"
-                                        onClick={() => deleteVariant(v.id)}
-                                      >
-                                        Delete
-                                      </Button>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
+                        <div>
+                          <Label htmlFor="variant-color" className="text-sm">Color</Label>
+                          <Input
+                            id="variant-color"
+                            type="color"
+                            value={variant.color}
+                            onChange={(e) => setVariant({ ...variant, color: e.target.value })}
+                            className="border-gray-300 h-10"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="variant-quantity" className="text-sm">Quantity</Label>
+                          <Input
+                            id="variant-quantity"
+                            type="number"
+                            value={variant.quantity}
+                            onChange={(e) => setVariant({ ...variant, quantity: e.target.value })}
+                            placeholder="0"
+                            min="1"
+                            className="border-gray-300"
+                          />
+                        </div>
                       </div>
+                      <Button
+                        className="bg-green-600 hover:bg-green-700"
+                        onClick={addVariant}
+                        disabled={!variant.size || !variant.color || !variant.quantity}
+                      >
+                        Add Variant
+                      </Button>
+                      {newProduct.variants.length > 0 && (
+                        <div className="mt-4">
+                          <table className="w-full border-collapse">
+                            <thead>
+                              <tr className="bg-gray-100">
+                                <th className="border p-2 text-left">Size</th>
+                                <th className="border p-2 text-left">Color</th>
+                                <th className="border p-2 text-left">Quantity</th>
+                                <th className="border p-2 text-left">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {newProduct.variants.map((v) => (
+                                <tr key={v.id}>
+                                  <td className="border p-2">{v.size}</td>
+                                  <td className="border p-2">
+                                    <div className="flex items-center">
+                                      <div
+                                        className="w-6 h-6 mr-2"
+                                        style={{ backgroundColor: v.color }}
+                                      ></div>
+                                      {v.color}
+                                    </div>
+                                  </td>
+                                  <td className="border p-2">
+                                    <Input
+                                      type="number"
+                                      value={v.quantity}
+                                      onChange={(e) => updateVariant(v.id, 'quantity', parseInt(e.target.value))}
+                                      className="border-gray-300 w-20"
+                                      min="1"
+                                    />
+                                  </td>
+                                  <td className="border p-2">
+                                    <Button
+                                      variant="destructive"
+                                      onClick={() => deleteVariant(v.id)}
+                                    >
+                                      Delete
+                                    </Button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                   {/* Categories */}
                   <div>
                     <h3 className="text-green-700 font-medium text-lg mb-4">Categories</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="category" className="text-sm">Category *</Label>
-                        <Select
+                        <Input
+                          id="category"
                           value={newProduct.category}
-                          onValueChange={(value) => setNewProduct({ ...newProduct, category: value })}
-                        >
-                          <SelectTrigger className="border-gray-300">
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.slice(1).map((category) => (
-                              <SelectItem key={category} value={category}>
-                                {category}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            setNewProduct({ ...newProduct, category: e.target.value })
+                          }
+                          placeholder="Enter category"
+                          className="border-gray-300"
+                        />
                       </div>
                       <div>
                         <Label htmlFor="subCategory" className="text-sm">Sub-Category</Label>
@@ -602,20 +578,20 @@ export default function ProductsSection() {
                     <div className="grid grid-cols-3 gap-4">
                       <div>
                         <Label htmlFor="quantity" className="text-sm">
-                          Quantity * {newProduct.type === 'Clothes' && '(Auto-calculated)'}
+                          Quantity * {newProduct.variants.length > 0 && '(Auto-calculated from variants)'}
                         </Label>
                         <Input
                           id="quantity"
                           type="number"
-                          value={newProduct.type === 'Clothes' ? calculateTotalQuantity() : newProduct.quantity}
+                          value={newProduct.variants.length > 0 ? calculateTotalQuantity() : newProduct.quantity}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                            newProduct.type !== 'Clothes' &&
+                            newProduct.variants.length === 0 &&
                             setNewProduct({ ...newProduct, quantity: e.target.value })
                           }
                           placeholder="0"
                           min="1"
                           className="border-gray-300"
-                          disabled={newProduct.type === 'Clothes'}
+                          disabled={newProduct.variants.length > 0}
                         />
                       </div>
                       <div>
@@ -792,8 +768,10 @@ export default function ProductsSection() {
                       variant="secondary"
                       size="sm"
                       className="bg-white text-green-600 hover:bg-green-50"
+                      onClick={() => handleViewProduct(product)}
                     >
-                      View
+                      <Eye className="h-4 w-4" />
+                      <span className="ml-1">View</span>
                     </Button>
                   </div>
                 </div>
@@ -831,6 +809,116 @@ export default function ProductsSection() {
           </div>
         )}
       </div>
+
+      {/* View Product Dialog */}
+      <Dialog open={isViewProductOpen} onOpenChange={setIsViewProductOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-green-700">{viewedProduct?.prod_Name}</DialogTitle>
+            <DialogDescription>Product Details</DialogDescription>
+          </DialogHeader>
+          {viewedProduct && (
+            <div className="space-y-6">
+              {/* Image */}
+              <div className="flex justify-center">
+                <div className="w-48 h-48 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                  {viewedProduct.imageUrl ? (
+                    <img
+                      src={viewedProduct.imageUrl}
+                      alt={viewedProduct.prod_Name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Package className="h-12 w-12 text-gray-400" />
+                  )}
+                </div>
+              </div>
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Type</Label>
+                  <p className="text-gray-900">{viewedProduct.type}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Category</Label>
+                  <p className="text-gray-900">{viewedProduct.prod_Categ}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Sub-Category</Label>
+                  <p className="text-gray-900">{viewedProduct.prod_Subcateg || 'N/A'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Weight</Label>
+                  <p className="text-gray-900">{viewedProduct.prod_Weight || 'N/A'}</p>
+                </div>
+              </div>
+              {/* Description */}
+              <div>
+                <Label className="text-sm font-medium">Description</Label>
+                <p className="text-gray-900 mt-1">{viewedProduct.prod_Desc || 'No description available'}</p>
+              </div>
+              {/* Pricing */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Price</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-bold text-green-600">R{viewedProduct.price.toFixed(2)}</span>
+                  {viewedProduct.onSaleOffer && (
+                    <Badge variant="destructive" className="text-xs">{viewedProduct.onSaleOffer}</Badge>
+                  )}
+                </div>
+              </div>
+              {/* Quantity */}
+              <div>
+                <Label className="text-sm font-medium">Total Quantity</Label>
+                <p className="text-gray-900">{viewedProduct.quantity}</p>
+              </div>
+              {/* Variants */}
+              {viewedProduct.variants && viewedProduct.variants.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium">Variants</Label>
+                  <div className="mt-2 overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="border p-2 text-left">Size</th>
+                          <th className="border p-2 text-left">Color</th>
+                          <th className="border p-2 text-left">Quantity</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {viewedProduct.variants.map((v) => (
+                          <tr key={v.id}>
+                            <td className="border p-2">{v.size}</td>
+                            <td className="border p-2">
+                              <div className="flex items-center">
+                                <div
+                                  className="w-6 h-6 mr-2 rounded"
+                                  style={{ backgroundColor: v.color }}
+                                ></div>
+                                {v.color}
+                              </div>
+                            </td>
+                            <td className="border p-2">{v.quantity}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+              {/* Actions */}
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsViewProductOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
