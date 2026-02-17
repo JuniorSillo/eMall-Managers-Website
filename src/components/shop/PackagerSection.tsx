@@ -399,7 +399,8 @@ export default function PackagerSection() {
               <Label htmlFor="gender" className="text-sm font-medium text-gray-700">Gender</Label>
               <Select
                 value={newPackager.gender}
-                onValueChange={(value) => setNewPackager({ ...newPackager, gender: value })}
+                onValueChange={(value: string) => setNewPackager({ ...newPackager, gender: value })}
+
               >
                 <SelectTrigger className="mt-1 rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500">
                   <SelectValue placeholder="Select gender" />
@@ -529,7 +530,8 @@ export default function PackagerSection() {
               <Label htmlFor="edit-gender" className="text-sm font-medium text-gray-700">Gender</Label>
               <Select
                 value={editPackager.gender}
-                onValueChange={(value) => setEditPackager({ ...editPackager, gender: value })}
+                onValueChange={(value: string) => setEditPackager({ ...editPackager, gender: value })}
+
               >
                 <SelectTrigger className="mt-1 rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500">
                   <SelectValue placeholder="Select gender" />

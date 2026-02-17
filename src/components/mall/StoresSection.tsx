@@ -962,7 +962,8 @@ export default function StoresSection() {
               <Label htmlFor="mangrID" className="text-sm font-medium text-gray-700">Shop Manager</Label>
               <Select
                 value={newStore.mangrID}
-                onValueChange={(value) => setNewStore({ ...newStore, mangrID: value })}
+                onValueChange={(value : number) => setNewStore({ ...newStore, mangrID: value.toString() })}
+
               >
                 <SelectTrigger className="mt-1 rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500">
                   <SelectValue placeholder="Select shop manager" />

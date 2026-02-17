@@ -383,7 +383,7 @@ export default function StoresManager() {
               <Label htmlFor="gender" className="text-sm font-medium text-gray-700">Gender</Label>
               <Select
                 value={newManager.gender}
-                onValueChange={(value) => setNewManager({ ...newManager, gender: value })}
+                onValueChange={(value: string) => setNewManager({ ...newManager, gender: value })}
               >
                 <SelectTrigger className="mt-1 rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500">
                   <SelectValue placeholder="Select gender" />
@@ -510,7 +510,7 @@ export default function StoresManager() {
               <Label htmlFor="edit-gender" className="text-sm font-medium text-gray-700">Gender</Label>
               <Select
                 value={editManager.uGender}
-                onValueChange={(value) => setEditManager({ ...editManager, uGender: value })}
+                onValueChange={(value: string) => setEditManager({ ...editManager, uGender: value })}
               >
                 <SelectTrigger className="mt-1 rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500">
                   <SelectValue placeholder="Select gender" />

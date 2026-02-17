@@ -1409,7 +1409,8 @@ export default function ProductsSection() {
                       <Label>Size</Label>
                       <Select
                         value={variant.size}
-                        onValueChange={(value) => setVariant({ ...variant, size: value })}
+                        onValueChange={(value: string) => setVariant({ ...variant, size: value })}
+
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select size" />
@@ -1667,35 +1668,7 @@ export default function ProductsSection() {
           </Button>
         ))}
 
-        <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Plus className="mr-1 h-4 w-4" />
-              New Category
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Category</DialogTitle>
-            </DialogHeader>
-            <div className="py-4">
-              <Label htmlFor="new-cat">Category Name</Label>
-              <Input
-                id="new-cat"
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder="e.g. Home Appliances"
-                className="mt-2"
-              />
-            </div>
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setIsAddCategoryOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleAddCategory}>Add Category</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+      
       </div>
 
       {/* Products Grid */}
