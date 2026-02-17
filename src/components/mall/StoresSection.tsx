@@ -628,7 +628,7 @@ export default function StoresSection() {
   const [newStore, setNewStore] = useState({
     shopName: '',
     shopType: '',
-    mangrID: '',
+    mangrID: '' as string | number,
     mallID: '',
     image: undefined as File | undefined,
   });
