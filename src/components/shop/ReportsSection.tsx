@@ -86,7 +86,8 @@ interface Insight {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function toApiRange(range: DateRange): string {
+// FIX: explicit return type matches ReportDateParams['range'] literal union
+function toApiRange(range: DateRange): 'today' | 'thisWeek' | 'thisMonth' | 'custom' {
   switch (range) {
     case 'today': return 'today';
     case 'week':  return 'thisWeek';
@@ -535,16 +536,14 @@ function InventoryReport({
     { label: 'Low Stock Items',   value: String(summary.lowStockCount), trend: summary.lowStockCount > 0 ? 'down' : undefined, change: summary.lowStockCount > 0 ? 'Needs attention' : 'All good', icon: <AlertCircle className="h-5 w-5" />, color: 'text-red-600' },
   ] : [];
 
-  // Stock distribution — derive from alerts
-  const lowStockCount    = alerts?.lowStock.length ?? 0;
-  const inStockCount     = summary ? Math.max(0, summary.totalProducts - lowStockCount) : 0;
+  const lowStockCount = alerts?.lowStock.length ?? 0;
+  const inStockCount  = summary ? Math.max(0, summary.totalProducts - lowStockCount) : 0;
 
   const stockDistData = {
     labels: ['In Stock', 'Low Stock'],
     datasets: [{ data: [inStockCount, lowStockCount], backgroundColor: ['#16a34a', '#f59e0b'], borderWidth: 0 }],
   };
 
-  // Top products bar chart
   const topProdsChartData = {
     labels: topProds.map((p) => p.productName),
     datasets: [{ label: 'Units Sold', data: topProds.map((p) => p.totalSold), backgroundColor: '#16a34a' }],
@@ -553,10 +552,8 @@ function InventoryReport({
   const pieOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' as const }, tooltip: { backgroundColor: '#1f2937', padding: 10, cornerRadius: 8 } } };
   const barOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1f2937', padding: 10, cornerRadius: 8 } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#f3f4f6' } } } };
 
-  // Flatten low stock alerts into table rows
   const lowStockRows = alerts?.lowStock ?? [];
 
-  // Derive insights from live data
   const insights: Insight[] = [
     ...(summary && summary.lowStockCount > 0 ? [{ type: 'warning' as const, title: 'Low Stock Alert', message: `${summary.lowStockCount} product${summary.lowStockCount > 1 ? 's are' : ' is'} running low on stock.` }] : []),
     ...(summary && summary.lowStockCount === 0 ? [{ type: 'success' as const, title: 'Stock Levels Healthy', message: 'All products are sufficiently stocked.' }] : []),
@@ -702,7 +699,6 @@ function OrdersReport({
     { label: 'Pending Orders',    value: String(summary.pendingOrders),    trend: summary.pendingOrders > 0 ? 'down' : undefined, change: summary.pendingOrders > 0 ? 'Awaiting action' : 'All clear', icon: <AlertCircle className="h-5 w-5" />, color: 'text-amber-600' },
   ] : [];
 
-  // Status breakdown doughnut
   const statusChartData = {
     labels: ['Completed', 'Pending'],
     datasets: [{ data: [summary?.completedOrders ?? 0, summary?.pendingOrders ?? 0], backgroundColor: ['#16a34a', '#f59e0b'], borderWidth: 0 }],
@@ -867,7 +863,6 @@ function FinancialReport({
     { label: 'Top Earning Product',value: salesSummary.topProduct,                                              icon: <Package className="h-5 w-5" />,        color: 'text-amber-600'  },
   ] : [];
 
-  // Weekly revenue chart
   const revenueChartData = {
     labels: weeklySales.map((s) => s.day),
     datasets: [{
@@ -877,7 +872,6 @@ function FinancialReport({
     }],
   };
 
-  // Top products revenue bar
   const topProdsChartData = {
     labels: topProds.map((p) => p.productName),
     datasets: [{ label: 'Revenue (R)', data: topProds.map((p) => p.revenue), backgroundColor: ['#16a34a','#22c55e','#4ade80','#86efac','#bbf7d0'] }],
