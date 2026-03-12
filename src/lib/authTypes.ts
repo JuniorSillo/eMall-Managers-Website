@@ -72,5 +72,75 @@ export interface Product {
   imageUrl?: string;
   onSaleOffer?: string;
   type: string;
-  variants?: { id: number; size: string; color: string; quantity: number }[];
+  variants?: { id: number; size: string; color: string; colorPic: string; quantity: number }[];
+}
+
+// ─── Dashboard Types ──────────────────────────────────────────────────────────
+
+export interface DashboardSummary {
+  todayRevenue: number;
+  todayOrders: number;
+  totalProducts: number;
+  lowStockCount: number;
+  pendingOrders: number;
+  completedOrders: number;
+}
+
+export interface WeeklySale {
+  day: string;
+  revenue: number;
+}
+
+export interface TopProduct {
+  productName: string;
+  totalSold: number;
+  revenue: number;
+}
+
+export interface RecentOrder {
+  orderId: number;
+  customerName: string;
+  total: number;
+  status: string;
+}
+
+export interface DashboardAlerts {
+  lowStock: { message: string; type: string }[];
+  pendingReturns: { message: string; type: string }[];
+  paymentFailed: { message: string; type: string }[];
+}
+
+// ─── Reports Types ────────────────────────────────────────────────────────────
+
+export interface ReportDateParams {
+  range?: 'today' | 'thisWeek' | 'thisMonth' | 'custom';
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface SalesSummary {
+  totalRevenue: number;
+  ordersCompleted: number;
+  averageOrderValue: number;
+  topProduct: string;
+}
+
+export interface SalesTrendItem {
+  month: string;
+  thisYear: number;
+  lastYear: number;
+}
+
+export interface SalesTopProduct {
+  productName: string;
+  totalSold: number;
+  revenue: number;
+}
+
+export interface SalesBestSeller {
+  rank: number;
+  productName: string;
+  revenue: number;
+  units: number;
+  growth: number;
 }
